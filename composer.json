@@ -2,6 +2,7 @@
     "require": {
         "geoip2/geoip2": "~2.0",
         "bcosca/fatfree": "^3.6",
-        "vlucas/phpdotenv": "^3.3"
+        "vlucas/phpdotenv": "^3.3",
+        "paquettg/php-html-parser": "^2.0"
     }
 }
