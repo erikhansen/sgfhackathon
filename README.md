@@ -1,31 +1,61 @@
-# 2019-04-04 GeoIP setup
+# SGF Web Devs Hackathon
 
-Got link to City DB from https://dev.maxmind.com/geoip/geoip2/geolite2/
+Disclaimer: this code was written under duress and in no way should be reflection of how code should be written.
 
-    cd /var/www/sites/2019-05-sgfwebdevs-hackathon.dev/
-    mkdir var
-    wget https://geolite.maxmind.com/download/geoip/database/GeoLite2-City.tar.gz
-    tar -xzvf GeoLite2-City.tar.gz
-    mv GeoLite2-City_20190402/GeoLite2-City.mmdb ./
-    rm -rf GeoLite2-City_20190402 GeoLite2-City.tar.gz
+See here for more context: https://www.meetup.com/SGF-Web-Devs/events/260863460/
 
-See `index.php` for basic usage example
+See also the [requirements.pdf](requirements.pdf) document for the requirements for this project.
 
-# Import DB Erik:
+To run the code in this repo:
 
-mysql -e 'DROP DATABASE IF EXISTS `emergencme`;'
-mysql -e 'CREATE DATABASE IF NOT EXISTS `emergencme`;'
-cd /var/www/sites/sgfhackathon.dev
-pv var/emergencme.dump | mysql emergencme
+```
+# Clone repo
+git clone git@github.com:erikhansen/sgfwebdevs-hackathon2019-05-01.git
+cd sgfwebdevs-hackathon2019-05-01
+composer install
+php -f index.php
+```
 
+Example output:
 
-#  Test change
+```
+Sending this data to server:
+array(6) {
+  'type' =>
+  int(3)
+  'reason' =>
+  int(42)
+  'description' =>
+  string(86) "DreamTeam + Avoid South Belt and Pear due to a traffic incident involving loose cattle"
+  'countyId' =>
+  int(2097)
+  'lat' =>
+  double(39.7691377)
+  'lng' =>
+  double(-94.8538345)
+}
 
-
-
-
-
-Hello
-Test
-
-
+Request from server:
+{
+    "data": {
+        "latitude": 39.7691377,
+        "longitude": -94.8538345,
+        "alert_type": "3",
+        "alert_sub_type": "",
+        "alert_id": 179,
+        "circle_radius": 500,
+        "time_activation": "2019-05-02T11:43:14.000Z",
+        "time_deactivation": "2019-05-02T13:43:14.000Z",
+        "system_name": "Pia Society",
+        "admin_name": "Talha ",
+        "alert_description": "DreamTeam + Avoid South Belt and Pear due to a traffic incident involving loose cattle",
+        "active": 1,
+        "reason_description": "Timely Warning",
+        "attachments": [],
+        "update_attachments": []
+    },
+    "message": "Alert sent successfully",
+    "error": false
+}
+…
+```
