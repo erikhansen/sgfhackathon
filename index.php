@@ -1,15 +1,11 @@
 <?php
-/**
- * @category    KrakenCommerce
- * @copyright   Copyright (c) 2019 Kraken, LLC
- */
+const API_KEY = 'AIzaSyCE7idJgRotl465ooRS0VCaCCP43S3di3s';
 
 require 'vendor/autoload.php';
 
 use PHPHtmlParser\Dom;
 
 $counties = file_get_contents("https://alerts.sgf.dev/Counties");
-
 $counties = json_decode($counties, true);
 $countyMap = [];
 
@@ -24,78 +20,72 @@ $reasonMap = ['Alert' => 42, 'Advisory' => 41];
 
 $alertUrl = "https://alerts.sgf.dev/";
 $data = [];
+
 function geocode($address)
 {
-
     // url encode the address
     $address = urlencode($address);
 
-    $apiKey = 'AIzaSyCE7idJgRotl465ooRS0VCaCCP43S3di3s';
-
     // google map geocode api url
-    $url = "https://maps.googleapis.com/maps/api/geocode/json?address={$address}&key=$apiKey";
+    $url = "https://maps.googleapis.com/maps/api/geocode/json?address={$address}&key=" . API_KEY;
 
-    // get the json response
-    $resp_json = file_get_contents($url);
+    $respJson = file_get_contents($url);
 
     // decode the json
-    $resp = json_decode($resp_json, true);
+    $resp = json_decode($respJson, true);
 
-    // response status will be 'OK', if able to geocode given address
-    if ($resp['status'] == 'OK') {
+    if ($resp['status'] !== 'OK') {
+        throw new \Exception('Unable to parse address');
+    }
 
-        $county = null;
-        foreach ($resp['results'][0] as $component) {
-            if (!is_array($component)) {
+    $county = null;
+
+    print_r($resp);
+    die();
+
+    foreach ($resp['results'][0] as $component) {
+        if (!is_array($component)) {
+            continue;
+        }
+        foreach ($component as $subComponent) {
+            if (!isset($subComponent['types']) || !is_array($subComponent['types'])) {
                 continue;
             }
-            foreach ($component as $subComponent) {
-                if (!isset($subComponent['types']) || !is_array($subComponent['types'])) {
-                    continue;
-                }
-                foreach ($subComponent['types'] as $type) {
-                    if ($type === 'administrative_area_level_2') {
-                        $county = $subComponent['long_name'];
-                    }
+            foreach ($subComponent['types'] as $type) {
+                if ($type === 'administrative_area_level_2') {
+                    $county = $subComponent['long_name'];
                 }
             }
         }
+    }
 
-        // get the important data
-        $lati = isset($resp['results'][0]['geometry']['location']['lat'])
-            ? $resp['results'][0]['geometry']['location']['lat'] : "";
-        $longi = isset($resp['results'][0]['geometry']['location']['lng'])
-            ? $resp['results'][0]['geometry']['location']['lng'] : "";
-        $formatted_address = isset($resp['results'][0]['formatted_address']) ? $resp['results'][0]['formatted_address']
-            : "";
+    // get the important data
+    $lati = isset($resp['results'][0]['geometry']['location']['lat'])
+        ? $resp['results'][0]['geometry']['location']['lat'] : "";
+    $longi = isset($resp['results'][0]['geometry']['location']['lng'])
+        ? $resp['results'][0]['geometry']['location']['lng'] : "";
 
-        // verify if data is complete
-        if ($lati && $longi && $formatted_address) {
+    // verify if data is complete
+    if ($lati && $longi) {
 
-            // put the data in the array
-            $data_arr = [];
+        // put the data in the array
+        $dataArr = [];
 
-            array_push(
-                $data_arr,
-                $lati,
-                $longi,
-                $county,
-                $formatted_address
-            );
+        array_push(
+            $dataArr,
+            $lati,
+            $longi,
+            $county
+        );
 
-            return $data_arr;
-
-        } else {
-            return false;
-        }
+        return $dataArr;
 
     } else {
-        echo "<strong>ERROR: {$resp['status']}</strong>";
-
-        return false;
+        throw new \Exception('Unable to parse address');
     }
 }
-function sendRequest($type, $reason, $description, $countyId, $lat, $lng) {
+function sendRequest($type, $reason, $description, $countyId, $lat, $lng)
+{
     $url = 'https://alerts.sgf.dev/SubmitAlert';
 
     $data = [
@@ -149,22 +139,3 @@ for ($i = 0; $i < 10; $i++) {
     var_dump($data);
     sendRequest($data['type'], $data['reason'], $data['details'], $data['countyId'], $data['lat'], $data['lng']);
 }
-
-
-
-
-//var_dump($db->exec('SELECT * FROM first_table'));
-
-# From https://github.com/maxmind/GeoIP2-php#city-example
-// This creates the Reader object, which should be reused across
-// lookups.
-//$reader = new Reader('var/GeoLite2-City.mmdb');
-
-// Replace "city" with the appropriate method for your database, e.g.,
-// "country".
-//$record = $reader->city('128.101.101.101');
-//
-//print($record->country->isoCode . "\n"); // 'US'
-//print($record->city->name . "\n"); // 'US'
-//print($record->country->name . "\n"); // 'United States'
-//print($record->country->names['zh-CN'] . "\n"); // '美国'
