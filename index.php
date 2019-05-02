@@ -1,7 +1,8 @@
 <?php
-const API_KEY = 'AIzaSyCE7idJgRotl465ooRS0VCaCCP43S3di3s';
-
 require 'vendor/autoload.php';
+
+// Google Maps API key. Committed this key to the repo since it will be expired after 2019-05-01
+const API_KEY = 'AIzaSyCE7idJgRotl465ooRS0VCaCCP43S3di3s';
 
 use PHPHtmlParser\Dom;
 
@@ -40,9 +41,7 @@ function geocode($address)
 
     $county = null;
 
-    print_r($resp);
-    die();
-
+    // Get county name
     foreach ($resp['results'][0] as $component) {
         if (!is_array($component)) {
             continue;
@@ -54,12 +53,12 @@ function geocode($address)
             foreach ($subComponent['types'] as $type) {
                 if ($type === 'administrative_area_level_2') {
                     $county = $subComponent['long_name'];
+                    break 3;
                 }
             }
         }
     }
 
-    // get the important data
     $lati = isset($resp['results'][0]['geometry']['location']['lat'])
         ? $resp['results'][0]['geometry']['location']['lat'] : "";
     $longi = isset($resp['results'][0]['geometry']['location']['lng'])
@@ -68,7 +67,6 @@ function geocode($address)
     // verify if data is complete
     if ($lati && $longi) {
 
-        // put the data in the array
         $dataArr = [];
 
         array_push(
@@ -97,7 +95,10 @@ function sendRequest($type, $reason, $description, $countyId, $lat, $lng)
         'lng' => $lng
     ];
 
-    // use key 'http' even if you send the request to https://...
+    echo "Sending this data to server:\n";
+    var_dump($data);
+    echo PHP_EOL;
+
     $options = array(
         'http' => array(
             'header'  => "Content-type: application/x-www-form-urlencoded\r\n",
@@ -107,16 +108,16 @@ function sendRequest($type, $reason, $description, $countyId, $lat, $lng)
     );
     $context  = stream_context_create($options);
     $result = file_get_contents($url, false, $context);
-    if ($result === FALSE) { /* Handle error */ }
+    if ($result === false) {
+        throw new \Exception('Unable to send request');
+    }
 
-    var_dump($result);
+    return $result;
 }
 
 for ($i = 0; $i < 10; $i++) {
     $contents = file_get_contents($alertUrl);
-    //echo $contents;
     $dom->load($contents);
-    //    echo $dom->outerHtml;
     $data['details'] = "DreamTeam + " . $dom->find('.full_message_info h2')->firstChild()->innerHtml;
 
     $priority = $dom->find('.full_message_info .priority')->firstChild()->innerHtml;
@@ -136,6 +137,8 @@ for ($i = 0; $i < 10; $i++) {
     $data['lng'] = $parsedAddress[1];
     $data['countyId'] = $countyMap[trim(str_replace('County', '', $parsedAddress[2]))];
 
-    var_dump($data);
-    sendRequest($data['type'], $data['reason'], $data['details'], $data['countyId'], $data['lat'], $data['lng']);
+    $result = sendRequest($data['type'], $data['reason'], $data['details'], $data['countyId'], $data['lat'], $data['lng']);
+
+    echo "Result from server:\n";
+    echo json_encode(json_decode($result), JSON_PRETTY_PRINT) . PHP_EOL;
 }
