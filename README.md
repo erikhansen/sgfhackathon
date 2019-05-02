@@ -1,6 +1,6 @@
 # SGF Web Devs Hackathon
 
-Disclaimer: this code was written under duress and in no way should be reflection of how code should be written.
+Disclaimer: this code was written under duress and is not a good example how code should be written.
 
 See here for more context: https://www.meetup.com/SGF-Web-Devs/events/260863460/
 
